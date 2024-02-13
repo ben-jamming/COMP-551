@@ -2,20 +2,41 @@ import numpy as np
 
 class MultiClassRegression:
     
-    def __init__(self, nFeatures, nClasses):
-        self.W = np.random.rand(nFeatures, nClasses)
+    def __init__(self, nFeatures, nClasses, regularization_strength=0.1):
+        self.W = np.random.randn(nFeatures, nClasses) * 0.01  # Small random values
+        self.regularization_strength = regularization_strength
         
+    def softmax(self, X):
+        z = np.dot(X, self.W)
+        z -= np.max(z, axis=1, keepdims=True)  # Numerical stability
+        exp_scores = np.exp(z)
+        probabilities = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+        return probabilities
+    
     def predict(self, X):
-        y_pred = np.exp(np.matmul(X, self.W))
-        return y_pred / np.sum(y_pred, axis=1).reshape(X.shape[0], 1)
+        return np.argmax(self.softmax(X), axis=1)
     
-    def gradient(self, X, y):
-        return np.matmul(X.T, self.predict(X) - y) / X.shape[0]
-    
-    def cross_entropy(self, y, X):
-        return -np.sum(y * np.log(self.predict(X)))
+    def loss_and_gradient(self, X, y):
+        probabilities = self.softmax(X)
+        N = X.shape[0]
+        correct_logprobs = -np.log(probabilities[range(N), y])
+        data_loss = np.sum(correct_logprobs) / N
+        reg_loss = 0.5 * self.regularization_strength * np.sum(self.W * self.W)
+        loss = data_loss + reg_loss
         
-    def fit(self, X, y, lr=0.005, niters=100):
+        dscores = probabilities
+        dscores[range(N), y] -= 1
+        dscores /= N
+        dW = np.dot(X.T, dscores) + self.regularization_strength * self.W
+        
+        return loss, dW
+    
+    def fit(self, X, y, lr=0.005, niters=100, verbose=False):
         for i in range(niters):
-            self.W -= lr * self.gradient(X, y)
-        
+            loss, dW = self.loss_and_gradient(X, y)
+            self.W -= lr * dW
+            
+            if verbose and i % 10 == 0:
+                print(f"Iteration {i}: Loss {loss}")
+                
+        return self
