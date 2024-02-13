@@ -40,3 +40,24 @@ class MultiClassRegression:
                 print(f"Iteration {i}: Loss {loss}")
                 
         return self
+    
+    def gradient_check(self, X, y, epsilon=1e-5):
+        numerical_gradients = np.zeros_like(self.W)
+        _, analytic_gradient = self.loss_and_gradient(X, y)
+        
+        it = np.nditer(self.W, flags=['multi_index'], op_flags=['readwrite'])
+        while not it.finished:
+            ix = it.multi_index
+            old_value = self.W[ix]
+            self.W[ix] = old_value + epsilon
+            loss_plus_epsilon = self.loss_and_gradient(X, y)[0]
+            self.W[ix] = old_value - epsilon
+            loss_minus_epsilon = self.loss_and_gradient(X, y)[0]
+            self.W[ix] = old_value
+            
+            numerical_gradients[ix] = (loss_plus_epsilon - loss_minus_epsilon) / (2 * epsilon)
+            it.iternext()
+        
+        # Compare the numerical and analytic gradients
+        relative_error = np.abs(numerical_gradients - analytic_gradient) / (np.abs(numerical_gradients) + np.abs(analytic_gradient))
+        return relative_error
