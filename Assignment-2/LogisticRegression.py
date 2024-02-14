@@ -2,13 +2,14 @@ import numpy as np
 
 class LogisticRegression:
     
-    def __init__(self, add_bias=True, learning_rate=0.1, epsilon=1e-4, max_iters=1e5, verbose=False, lambda_reg=0.01, regularize=True):
+    def __init__(self, add_bias=True, learning_rate=0.1, epsilon=1e-4, max_iters=1e5, verbose=False, lambda_reg=0.01, regularize=False):
         self.add_bias = add_bias
         self.learning_rate = learning_rate
-        self.epsilon = epsilon
-        self.max_iters = max_iters
+        self.epsilon = epsilon                        # Tolerance for the norm of gradients 
+        self.max_iters = max_iters                    # Maximum number of iteration of gradient descent
         self.verbose = verbose
         self.lambda_reg = lambda_reg
+        self.regularize = regularize                  # Option to turn regularization on/off
         self.logistic = lambda z: 1. / (1 + np.exp(-z))
 
     def gradient(self, x, y):
@@ -16,10 +17,10 @@ class LogisticRegression:
         yh = self.logistic(np.dot(x, self.w))  # predictions
         grad = np.dot(x.T, (yh - y)) / N
         if self.regularize:
-            grad += (self.lambda_reg / N) * self.w  # Note: added L2 regularization
+            grad += (self.lambda_reg / N) * self.w  # L2 regularization, included conditionally
         return grad
         
-    def fit(self, x, y, learning_rate, epsilon, max_iters, verbose, lambda_reg, regularize):
+    def fit(self, x, y):
         if x.ndim == 1:
             x = x[:, None]
         if self.add_bias:
