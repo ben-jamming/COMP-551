@@ -5,8 +5,7 @@ class LinearRegression:
         self.add_bias = add_bias
         self.N = None
         self.w = None
-        pass
-    
+        
     def fit(self, x, y):
         if x.ndim == 1:
             x = x[:, None]                         #add a dimension for the features
@@ -14,7 +13,7 @@ class LinearRegression:
         if self.add_bias:
             x = np.column_stack([x,np.ones(self.N)])    #add bias by adding a constant feature of value 1
         #alternatively: self.w = np.linalg.inv(x.T @ x)@x.T@y
-        self.w = np.linalg.lstsq(x, y)[0]          #return w for the least square difference
+        self.w = np.linalg.lstsq(x, y, rcond=None)[0]
         return self
     
     def predict(self, x):
