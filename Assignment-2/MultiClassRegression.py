@@ -2,13 +2,12 @@ import numpy as np
 
 class MultiClassRegression:
     
-    def __init__(self, nFeatures, nClasses, regularization_strength=0.1):
+    def __init__(self, nFeatures, nClasses):
         self.W = np.random.randn(nFeatures, nClasses) * 0.01  # Small random values
-        self.regularization_strength = regularization_strength
         
     def softmax(self, X):
         z = np.dot(X, self.W)
-        z -= np.max(z, axis=1, keepdims=True)  # Numerical stability
+        z -= np.max(z, axis=1, keepdims=True)  # Improves numerical stability
         exp_scores = np.exp(z)
         probabilities = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
         return probabilities
@@ -21,13 +20,12 @@ class MultiClassRegression:
         N = X.shape[0]
         correct_logprobs = -np.log(probabilities[range(N), y])
         data_loss = np.sum(correct_logprobs) / N
-        reg_loss = 0.5 * self.regularization_strength * np.sum(self.W * self.W)
-        loss = data_loss + reg_loss
+        loss = data_loss
         
         dscores = probabilities
         dscores[range(N), y] -= 1
         dscores /= N
-        dW = np.dot(X.T, dscores) + self.regularization_strength * self.W
+        dW = np.dot(X.T, dscores)
         
         return loss, dW
     
@@ -57,7 +55,5 @@ class MultiClassRegression:
             
             numerical_gradients[ix] = (loss_plus_epsilon - loss_minus_epsilon) / (2 * epsilon)
             it.iternext()
-        
-        # Compare the numerical and analytic gradients
-        relative_error = np.abs(numerical_gradients - analytic_gradient) / (np.abs(numerical_gradients) + np.abs(analytic_gradient))
-        return relative_error
+   
+        return np.abs(numerical_gradients - analytic_gradient) / (np.abs(numerical_gradients) + np.abs(analytic_gradient))
