@@ -1,8 +1,8 @@
 import numpy as np
 
-class LogisticRegression:
+class CustomLogisticRegression:
     
-    def __init__(self, add_bias=True, learning_rate=0.01, epsilon=1e-15, max_iters=1e5, verbose=False, lambda_reg=0.01, regularize=False):
+    def __init__(self, add_bias=True, learning_rate=0.01, epsilon=1e-15, max_iters=1e5, verbose=False, lambda_reg=0.01, regularize=False, record_training=False):
         self.add_bias = add_bias
         self.learning_rate = learning_rate
         self.epsilon = epsilon                        # Tolerance for the norm of gradients 
@@ -10,6 +10,7 @@ class LogisticRegression:
         self.verbose = verbose
         self.lambda_reg = lambda_reg
         self.regularize = regularize
+        self.record_training = record_training
         self.loss_history = []
         self.gradient_norm_history = []
         
@@ -47,8 +48,9 @@ class LogisticRegression:
         while np.linalg.norm(g) > self.epsilon and t < self.max_iters:
             g = self.gradient(x, y)
             self.w = self.w - self.learning_rate * g
-            self.loss_history.append(self.compute_loss(x, y))
-            self.gradient_norm_history.append(np.linalg.norm(g))
+            if self.record_training:
+                self.loss_history.append(self.compute_loss(x, y))
+                self.gradient_norm_history.append(np.linalg.norm(g))
             t += 1
         
         if self.verbose:
