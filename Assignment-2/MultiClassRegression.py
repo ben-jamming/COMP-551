@@ -15,6 +15,15 @@ class MultiClassRegression:
     def predict(self, X):
         return np.argmax(self.softmax(X), axis=1)
     
+    def predict_top_k(self, X, k=3):
+        """
+        Predict the top k classes for each sample in X.
+        """
+        probabilities = self.softmax(X)
+        top_k_predictions = np.argsort(probabilities, axis=1)[:, -k:]
+
+        return top_k_predictions
+    
     def loss_and_gradient(self, X, y):
         probabilities = self.softmax(X)
         N = X.shape[0]
