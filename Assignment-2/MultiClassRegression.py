@@ -1,4 +1,7 @@
 import numpy as np
+from tqdm import tqdm
+import matplotlib.pyplot as plt
+from IPython.display import display, clear_output
 
 class MultiClassRegression:
     
@@ -38,15 +41,49 @@ class MultiClassRegression:
         
         return loss, dW
     
-    def fit(self, X, y, lr=0.005, niters=100, verbose=False):
-        for i in range(niters):
-            loss, dW = self.loss_and_gradient(X, y)
+    def fit(self, X, y, lr=0.005, niters=100, validation_split=0):
+        validation_split = int(X.shape[0] * validation_split)
+        X_train, y_train = X[:-validation_split], y[:-validation_split]
+        X_val, y_val = X[-validation_split:], y[-validation_split:]
+        loss_history = []
+        validation_loss = []
+
+        # Create a tqdm object with a dynamic description
+        pbar = tqdm(range(niters), desc='Initializing')
+        best_weights = self.W
+
+        for i in pbar:
+            loss, dW = self.loss_and_gradient(X_train, y_train)
             self.W -= lr * dW
+
+            if validation_split > 0:
+                val_loss, val_dw = self.loss_and_gradient(X_val, y_val)
+                validation_loss.append(val_loss)
+            else:
+                val_loss = 'N/A'  # No validation loss if validation_split is 0
+                validation_loss.append(loss)
             
-            if verbose and i % 10 == 0:
-                print(f"Iteration {i}: Loss {loss}")
-                
-        return self
+            if validation_loss[-1] != min(validation_loss):
+                best_weights = self.W
+            
+            # if the min validation loss is more than 100 iterations ago, stop training
+            if i > 10 and min(validation_loss) not in validation_loss[-100:]:
+                print(f"Stopping early at iteration {i}, min validation loss: {min(validation_loss):.4f}")
+                print(f"Best weights found at iteration {validation_loss.index(min(validation_loss))}")
+                print("validation loss did not improve for 100 iterations")
+                break
+            
+            
+
+            loss_history.append(loss)
+            # Update tqdm description
+            if i % 10 == 0:
+                pbar.set_description(f"Iter {i}, Loss: {loss:.4f}, Val Loss: {val_loss:.4f}")
+        
+        self.W = best_weights
+
+        return self, loss_history, validation_loss
+    
     
     def gradient_check(self, X, y, epsilon=1e-5):
         numerical_gradients = np.zeros_like(self.W)
