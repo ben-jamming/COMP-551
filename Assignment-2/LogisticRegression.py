@@ -12,6 +12,7 @@ class CustomLogisticRegression:
         self.regularize = regularize
         self.record_training = record_training
         self.loss_history = []
+        self.val_loss_history = []
         self.gradient_norm_history = []
         
     def compute_loss(self, x, y):
@@ -32,15 +33,29 @@ class CustomLogisticRegression:
     def logistic(self, z):
         return 1 / (1 + np.exp(-np.clip(z, -500, 500)))
         
-    def fit(self, x, y):
+    def fit(self, X, Y):
+        val_split = 0.7
+        val_num = int(val_split*len(X))
+        # get random indices for the split
+        indices = np.random.permutation(len(X))
+        train_idx, val_idx = indices[:val_num], indices[val_num:]
+        # split the data
+        x, val_x = X[train_idx], X[val_idx]
+        y, val_y = Y[train_idx], Y[val_idx]
+
+
         if self.verbose:
             print(f"Shape of x: {x.shape}")
             print(f"Shape of y: {y.shape}")
         if x.ndim == 1:
             x = x.reshape(-1, 1)
+            val_x = val_x.reshape(-1, 1)
         if self.add_bias:
             N = x.shape[0]
             x = np.column_stack([x, np.ones(N)])
+            N_v = val_x.shape[0]
+            val_x = np.column_stack([val_x, np.ones(N_v)])
+
         N, D = x.shape
         self.w = np.zeros(D)
         g = np.inf
@@ -49,6 +64,7 @@ class CustomLogisticRegression:
             g = self.gradient(x, y)
             self.w = self.w - self.learning_rate * g
             if self.record_training:
+                self.val_loss_history.append(self.compute_loss(val_x, val_y))
                 self.loss_history.append(self.compute_loss(x, y))
                 self.gradient_norm_history.append(np.linalg.norm(g))
             t += 1
