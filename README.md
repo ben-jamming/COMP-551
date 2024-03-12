@@ -1,7 +1,5 @@
 
-## Overview
-
-This repository contains work completed for McGill's COMP 551 Applied Machine Learning course.
+Assignment work completed for McGill's COMP 551 Applied Machine Learning course.
 
 ## Models and Topics Covered
 
