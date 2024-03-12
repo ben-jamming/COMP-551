@@ -1,0 +1,31 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.core.debugger import set_trace
+import warnings
+import os
+
+# assuming the dataset was downloaded from kaggle, tar file unzipped,
+# and is on your Desktop in a file called archive
+
+home_directory = os.path.expanduser("~")
+
+train_file_path = os.path.join(home_directory, 'Desktop/archive/sign_mnist_train.csv')
+test_file_path = os.path.join(home_directory, 'Desktop/archive/sign_mnist_test.csv')
+
+# Load the datasets
+train_df = pd.read_csv(train_file_path)
+test_df = pd.read_csv(test_file_path)
+
+# Normalize the training and testing data input valuess
+
+x_train = train_df.drop(['label'], axis=1).values / 255.0
+x_test = test_df.drop(['label'], axis=1).values / 255.0
+
+# Get our output labels
+y_train = train_df['label']
+y_test = test_df['label']
+
+# Vectorize our data into a 1D array
+x_train = x_train.reshape(-1, 28*28)
+x_test = x_test.reshape(-1, 28*28)
