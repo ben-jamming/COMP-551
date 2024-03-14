@@ -1,0 +1,148 @@
+import numpy as np
+from scipy.optimize import check_grad
+
+class MLP:
+    def __init__(self, activation_fn, hidden_layers, units_in_hidden_layers, learning_rate=0.01):
+        '''
+        Constructor takes in the type of activation function, the amount of hidden layers, the amount of units within each hidden layer,
+        and the learning rate as input. It also initializes the weights, biases, and MLP propertises.
+        '''
+        self.activation_fn = activation_fn
+        self.hidden_layers = hidden_layers
+        self.units_in_hidden_layers = units_in_hidden_layers
+        self.learning_rate = learning_rate
+        self.weights = []
+        self.biases = []
+
+    def initialize_parameters(self):
+        '''
+        This function preemptively initializes the parameters necessary for training
+        '''
+        input_units = self.units_in_hidden_layers[0]  # get number of features in input data (this is number of units in first hidden layer)
+        for units in self.units_in_hidden_layers[1:]: # for loop handles any amount of hidden layers
+            self.weights.append(np.random.randn(units, input_units)) # for initialization, use random values according to the normal distribution for weight matrix
+            self.biases.append(np.zeros((units, 1))) # initially, biases are set to zero (to be updated during training)
+            input_units = units
+        output_units = 26  # Number of output classes (for 26 letters of the alphabet)
+        self.weights.append(np.random.randn(output_units, input_units)) #initializing softmax layer
+        self.biases.append(np.zeros((output_units, 1))) #initiallizing softmax layer
+
+    def forward_propagation(self, x):
+        '''
+        Forward Propagation function computes the output given an input x, applying the weights, biases, and activation functions 
+        (except output in which we apply softmax)
+
+        It returns the activations of all layers including the output layyer to make prediictions
+        '''
+        activations = [x]
+        for i in range(len(self.weights) - 1):
+            z = np.dot(self.weights[i], activations[-1]) + self.biases[i]
+            activations.append(self.activation_fn(z))
+    
+        # Apply softmax activation for output layer
+        z_output = np.dot(self.weights[-1], activations[-1]) + self.biases[-1]
+        exp_z = np.exp(z_output - np.max(z_output, axis=0, keepdims=True))
+        softmax_output = exp_z / np.sum(exp_z, axis=0, keepdims=True)
+        activations.append(softmax_output)
+        return activations
+
+    def backward_propagation(self, x, y, activations):  
+        '''
+        This method computes gradients of the weights and biases for each layer and updates the parameters during training
+        
+        It returns the gradients of the weights and biases as a dictionary
+        '''
+        training_sample_size = x.shape[1]
+        error = activations[-1] - y
+        gradients = {"weights": [], "biases": []}
+
+        for i in range(len(self.weights) - 1, -1, -1):
+            gradients["weights"].append(np.dot(error, activations[i].T) / training_sample_size) # get the gradients of weights
+            gradients["biases"].append(np.sum(error, axis=1, keepdims=True) / training_sample_size) # get the gradients  of the biasees
+            error = np.dot(self.weights[i].T, error) * self.activation_fn(activations[i], derivative=True) # update the error 
+
+        gradients["weights"] = gradients["weights"][::-1] # reverse gradient order to account for back propagation
+        gradients["biases"] = gradients["biases"][::-1]
+
+        return gradients 
+
+
+    def update_parameters(self, gradients):
+        '''
+        Updates the paramters and learing rates using gradients and learning rates
+        '''
+        for i in range(len(self.weights)):
+            self.weights[i] -= self.learning_rate * gradients["weights"][i]
+            self.biases[i] -= self.learning_rate * gradients["biases"][i]
+
+    def fit(self, x, y, epochs=100):
+        '''
+        Fit method takes as input x and y training data points, and hyperparameters to train model through modifying these parameters
+        '''
+        self.initialize_parameters()
+
+        for epoch in range(epochs):
+            for i in range(x.shape[1]):  # Change to x.shape[1]
+                x_i = x[:, i].reshape(-1, 1)
+                y_i = y[:, i].reshape(-1, 1)
+                activations = self.forward_propagation(x_i)
+                gradients = self.backward_propagation(x_i, y_i, activations)
+                self.update_parameters(gradients)
+
+    def predict(self, x):
+        '''
+        Predict method takes input points as inputs and returns associated predicted labels
+        '''
+        predictions = []
+        for i in range(x.shape[1]):  # Change to x.shape[1]
+            x_i = x[:, i].reshape(-1, 1)
+            output = self.forward_propagation(x_i)[-1]
+            predictions.append(np.argmax(output))
+        return np.array(predictions)
+
+    def evaluate_acc(self, y, y_pred):
+        '''
+        Calculate the accuracies of the predictionsEvaluate accuracy of predictions
+        '''
+        accuracy = sum(y_pred.argmax(axis=1) == y.argmax(axis=1))
+        accuracy = accuracy / y.shape[0]
+        return accuracy
+
+    def compute_cost(self, x, y):
+        activations = self.forward_propagation(x)
+        output = activations[-1]
+        m = x.shape[1]
+        cost = -np.sum(y * np.log(output) + (1 - y) * np.log(1 - output)) / m
+        return cost
+
+    # these  function is simply for checking if the implementation of MLP is mostly correct
+    def gradient_checking(self, x, y, epsilon=1e-5):
+        '''
+        This method takes the data points, x, and their associated label, y, as inputs and then 
+        does small perturbation to verify the implementation 
+        '''
+        params = np.concatenate([param.flatten() for param in self.weights + self.biases])
+        def cost_and_grad(params):
+            # Set the parameters to the new values
+            self.set_parameters(params)
+            # Compute cost and gradients using backpropagation
+            cost = self.compute_cost(x, y)
+            gradients = np.concatenate([grad.flatten() for grad in self.backward_propagation(x, y, self.forward_propagation(x))["weightss"] + self.backward_propagation(x, y, self.forward_propagation(x))["biases"]])
+            return cost, gradients
+        
+        num_grad = check_grad(lambda p: cost_and_grad(p)[0], lambda p: cost_and_grad(p)[1], params, epsilon=epsilon)
+        
+        return num_grad
+
+    def set_parameters(self, params):
+        
+        start = 0
+        for i in range(len(self.weights)):
+            end = start + self.weights[i].size
+            self.weights[i] = params[start:end].reshape(self.weights[i].shape)
+            start = end
+
+        for i in range(len(self.biases)):
+            end = start + self.biases[i].size
+            self.biases[i] = params[start:end].reshape(self.biases[i].shape)
+            start = end
