@@ -102,15 +102,18 @@ class MLP:
         return np.argmax(predictions, axis=1)
 
 
-def evaluate_acc(y_true, y_pred):
-    return np.mean(y_true == y_pred)
+def evaluate_acc(self,y, y_pred):
+        accuracy = sum(y_pred.argmax(axis=1) == y.argmax(axis=1))
+        accuracy = accuracy / y.shape[0]
+        return accuracy
 
 
 # Example usage
 
-
+# Initialize MLP
 mlp = MLP(activation_function=ReLULayer, hidden_layer_sizes=[64, 64])
 
+# Train MLP
 mlp.fit(x_train, y_train, learning_rate=0.1, num_iterations=200)
 
 # Predictions
