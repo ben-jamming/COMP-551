@@ -91,15 +91,15 @@ class MLP:
             self.update_weights(learning_rate)
         return loss
 
-    def predict(self, X):
-        predictions = self.forward(X)
-        return np.argmax(predictions, axis=1)
-
     def update_weights(self, learning_rate):
         for layer in self.layers:
             if layer.parameters is not None:
                 for param, grad in zip(layer.parameters, layer.gradient):
                     param -= learning_rate * grad.mean(axis=0)
+
+    def predict(self, X):
+        predictions = self.forward(X)
+        return np.argmax(predictions, axis=1)
 
 
 def evaluate_acc(y_true, y_pred):
@@ -107,13 +107,11 @@ def evaluate_acc(y_true, y_pred):
 
 
 # Example usage
-# Assuming you have loaded your data into x_train, y_train, x_test, y_test
 
-# Initialize MLP
+
 mlp = MLP(activation_function=ReLULayer, hidden_layer_sizes=[64, 64])
 
-# Train MLP
-loss = mlp.fit(x_train, y_train, learning_rate=0.1, num_iterations=200)
+mlp.fit(x_train, y_train, learning_rate=0.1, num_iterations=200)
 
 # Predictions
 y_pred_train = mlp.predict(x_train)
@@ -125,4 +123,4 @@ accuracy_test = evaluate_acc(y_test, y_pred_test)
 
 print("Training Accuracy:", accuracy_train)
 print("Test Accuracy:", accuracy_test)
-print("Final Loss:", loss)
+
