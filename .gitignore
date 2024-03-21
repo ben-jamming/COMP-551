@@ -145,3 +145,5 @@ pyvenv.cfg
 ipython.1
 ttx.1
 kernel.json
+share/
+archive/

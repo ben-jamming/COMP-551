@@ -1,5 +1,11 @@
 
 Assignment work completed for McGill's COMP 551 Applied Machine Learning course.
+## Setup Instructions
+- 1. Create a python3.10 virtual environment and activate it
+`python3.10 -m venv .`
+`source ./bin/activate`
+- 2. Install the packages
+`pip install -r requirements.txt`
 
 ## Models and Topics Covered
 
